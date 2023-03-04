@@ -1,0 +1,138 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fafafa;
+  color: #212121;
+  line-height: 1.5;
+  margin: 0;
+  padding-bottom: 20px;
+}
+
+p {
+  margin: 0;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  display: block;
+  padding: 5px 20px;
+  min-width: 120px;
+  height: 40px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: 2px solid darkgray;
+  font-size: 18px;
+  cursor: pointer;
+  color: rgb(38, 114, 75);
+}
+
+button:hover {
+  background-color: darkgray;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.load-more {
+  text-align: center;
+  margin: 0 auto;
+  color: #ffffff;
+  background-color: darkgray;
+}
+
+.load-more:hover {
+  background-color: rgb(38, 114, 75);
+  border-color: darkgray;
+}
+
+.search-form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  background-color: rgb(38, 114, 75);
+  padding: 10px;
+
+  box-shadow: 0px 2px 2px rgb(0 0 0 / 12%), 0px 3px 3px rgb(0 0 0 / 6%),
+    0px 4px 4px rgb(0 0 0 / 16%);
+}
+
+.search-form input {
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid darkgray;
+  padding: 10px 20px;
+  font-size: 18px;
+  outline: none;
+}
+
+.search-form input::placeholder {
+  color: rgb(38, 114, 75);
+}
+
+.search-form input:focus {
+  background-color: darkgray;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.search-form input:focus::placeholder {
+  color: #ffffff;
+}
+
+.search-form {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.gallery img {
+  height: 70%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.photo-card {
+  display: flex;
+  flex-direction: column;
+  width: 350px;
+  height: 250px;
+  border: 1px solid grey;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.info {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 20px;
+}
+
+.info-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
