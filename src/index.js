@@ -79,6 +79,15 @@ async function handleLoadMoreBtnClick() {
 
   simpleLightbox.refresh();
 
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
+
   if (
     response.data.totalHits <
     searchParams.get('page') * searchParams.get('per_page')
