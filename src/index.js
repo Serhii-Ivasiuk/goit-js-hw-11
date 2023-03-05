@@ -34,16 +34,28 @@ refs.form.addEventListener('submit', handleFormSubmit);
 refs.loadMoreBtn.addEventListener('click', handleLoadMoreBtnClick);
 
 async function handleFormSubmit(e) {
+  e.preventDefault();
+
   refs.loadMoreBtn.style.display = 'none';
 
   page = 1;
-  searchParams.set('page', page);
-
-  e.preventDefault();
 
   clearMarkup();
 
-  searchParams.set('q', e.target.elements.searchQuery.value);
+  searchParams.set('page', page);
+
+  const query = e.target.elements.searchQuery.value.trim();
+
+  if (query === '') {
+    refs.form.reset();
+    showNotification(
+      notificationType.INFO,
+      'Please, enter your search request.'
+    );
+    return;
+  }
+
+  searchParams.set('q', query);
 
   const response = await getImages();
 
@@ -65,28 +77,20 @@ async function handleFormSubmit(e) {
   simpleLightbox = new SimpleLightbox('.gallery a');
 
   refs.loadMoreBtn.style.display = 'block';
-
-  // refs.form.reset();
 }
 
 async function handleLoadMoreBtnClick() {
   page += 1;
+
   searchParams.set('page', page);
 
   const response = await getImages();
 
   renderCards(response.data.hits);
 
+  smoothAutoScroll();
+
   simpleLightbox.refresh();
-
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
-
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
 
   if (
     response.data.totalHits <
@@ -157,4 +161,14 @@ function clearMarkup() {
 
 function showNotification(type, message) {
   return Notiflix.Notify[type](message);
+}
+
+function smoothAutoScroll() {
+  const { height: cardHeight } =
+    refs.gallery.firstElementChild.getBoundingClientRect();
+
+  window.scrollBy({
+    top: cardHeight * 2,
+    behavior: 'smooth',
+  });
 }
