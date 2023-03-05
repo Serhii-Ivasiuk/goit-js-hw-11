@@ -18,52 +18,82 @@ const axios = require('axios').default;
 const BASE_URL = 'https://pixabay.com/api/';
 const searchParams = new URLSearchParams({
   key: '34105026-760e87e01f05ad85b03df7d04',
+  q: '',
   image_type: 'photo',
   orientation: 'horizontal',
   safesearch: true,
   per_page: 40,
+  page: 1,
 });
 
+let page = 1;
+let simpleLightbox = null;
+
+refs.loadMoreBtn.style.display = 'none';
 refs.form.addEventListener('submit', handleFormSubmit);
 refs.loadMoreBtn.addEventListener('click', handleLoadMoreBtnClick);
 
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
+  refs.loadMoreBtn.style.display = 'none';
+
+  page = 1;
+  searchParams.set('page', page);
+
   e.preventDefault();
 
   clearMarkup();
 
-  const formInputValue = e.target.elements.searchQuery.value;
-  getImages(formInputValue);
+  searchParams.set('q', e.target.elements.searchQuery.value);
 
-  refs.form.reset();
-}
+  const response = await getImages();
 
-function handleLoadMoreBtnClick(e) {
-  console.log(e.target);
-}
-
-async function getImages(searchQuery) {
-  try {
-    const response = await axios.get(
-      `${BASE_URL}?${searchParams}&q=${searchQuery}`
-    );
-
-    if (response.data.total === 0) {
-      showNotification(
-        notificationType.FAILURE,
-        'Sorry, there are no images matching your search query. Please try again.'
-      );
-      return;
-    }
+  if (response.data.total === 0) {
     showNotification(
-      notificationType.SUCCESS,
-      `Hooray! We found ${response.data.totalHits} images.`
+      notificationType.FAILURE,
+      'Sorry, there are no images matching your search query. Please try again.'
     );
+    return;
+  }
 
-    const imagesData = response.data.hits;
+  showNotification(
+    notificationType.SUCCESS,
+    `Hooray! We found ${response.data.totalHits} images.`
+  );
 
-    renderCards(imagesData);
-    new SimpleLightbox('.gallery a');
+  renderCards(response.data.hits);
+
+  simpleLightbox = new SimpleLightbox('.gallery a');
+
+  refs.loadMoreBtn.style.display = 'block';
+
+  // refs.form.reset();
+}
+
+async function handleLoadMoreBtnClick() {
+  page += 1;
+  searchParams.set('page', page);
+
+  const response = await getImages();
+
+  renderCards(response.data.hits);
+
+  simpleLightbox.refresh();
+
+  if (
+    response.data.totalHits <
+    searchParams.get('page') * searchParams.get('per_page')
+  ) {
+    refs.loadMoreBtn.style.display = 'none';
+    showNotification(
+      notificationType.INFO,
+      "We're sorry, but you've reached the end of search results."
+    );
+  }
+}
+
+async function getImages() {
+  try {
+    return await axios.get(`${BASE_URL}?${searchParams}`);
   } catch (error) {
     console.error(error);
   }
