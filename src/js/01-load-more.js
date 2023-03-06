@@ -26,7 +26,7 @@ const searchParams = new URLSearchParams({
   page: 1,
 });
 
-let page = 1;
+let page = 0;
 let simpleLightbox = null;
 
 refs.loadMoreBtn.style.display = 'none';
@@ -39,6 +39,8 @@ async function handleFormSubmit(e) {
   refs.loadMoreBtn.style.display = 'none';
 
   clearMarkup();
+
+  page = 1;
 
   searchParams.set('page', page);
 

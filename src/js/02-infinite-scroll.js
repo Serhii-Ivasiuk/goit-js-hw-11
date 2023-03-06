@@ -32,7 +32,7 @@ const infiniteScrollObserver = new IntersectionObserver(([entry], observer) => {
   }
 });
 
-let page = 1;
+let page = 0;
 let simpleLightbox = null;
 
 refs.form.addEventListener('submit', handleFormSubmit);
@@ -41,6 +41,8 @@ async function handleFormSubmit(e) {
   e.preventDefault();
 
   clearMarkup();
+
+  page = 1;
 
   searchParams.set('page', page);
 
