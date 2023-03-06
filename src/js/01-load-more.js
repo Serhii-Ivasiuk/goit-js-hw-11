@@ -38,8 +38,6 @@ async function handleFormSubmit(e) {
 
   refs.loadMoreBtn.style.display = 'none';
 
-  page = 1;
-
   clearMarkup();
 
   searchParams.set('page', page);

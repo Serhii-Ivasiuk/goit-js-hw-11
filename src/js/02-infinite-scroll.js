@@ -6,7 +6,6 @@ import axios from 'axios';
 const refs = {
   form: document.querySelector('#search-form'),
   gallery: document.querySelector('.gallery'),
-  loadMoreBtn: document.querySelector('.load-more'),
 };
 
 const notificationType = {
@@ -26,19 +25,20 @@ const searchParams = new URLSearchParams({
   page: 1,
 });
 
+const infiniteScrollObserver = new IntersectionObserver(([entry], observer) => {
+  if (entry.isIntersecting) {
+    observer.unobserve(entry.target);
+    handleInfiniteScroll();
+  }
+});
+
 let page = 1;
 let simpleLightbox = null;
 
-refs.loadMoreBtn.style.display = 'none';
 refs.form.addEventListener('submit', handleFormSubmit);
-refs.loadMoreBtn.addEventListener('click', handleLoadMoreBtnClick);
 
 async function handleFormSubmit(e) {
   e.preventDefault();
-
-  refs.loadMoreBtn.style.display = 'none';
-
-  page = 1;
 
   clearMarkup();
 
@@ -74,12 +74,12 @@ async function handleFormSubmit(e) {
 
   renderCards(response.data.hits);
 
-  simpleLightbox = new SimpleLightbox('.gallery a');
+  addObserver();
 
-  refs.loadMoreBtn.style.display = 'block';
+  simpleLightbox = new SimpleLightbox('.gallery a');
 }
 
-async function handleLoadMoreBtnClick() {
+async function handleInfiniteScroll() {
   page += 1;
 
   searchParams.set('page', page);
@@ -96,12 +96,21 @@ async function handleLoadMoreBtnClick() {
     response.data.totalHits <
     searchParams.get('page') * searchParams.get('per_page')
   ) {
-    refs.loadMoreBtn.style.display = 'none';
     showNotification(
       notificationType.INFO,
       "We're sorry, but you've reached the end of search results."
     );
     renderEndMessage();
+    return;
+  }
+
+  addObserver();
+}
+
+function addObserver() {
+  const lastCard = document.querySelector('.gallery > a:last-child');
+  if (lastCard) {
+    infiniteScrollObserver.observe(lastCard);
   }
 }
 
