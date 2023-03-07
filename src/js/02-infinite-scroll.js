@@ -1,29 +1,14 @@
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import axios from 'axios';
+import { ImagesService } from './services/get-images-service';
+
+const ImagesApi = new ImagesService();
 
 const refs = {
   form: document.querySelector('#search-form'),
   gallery: document.querySelector('.gallery'),
 };
-
-const notificationType = {
-  SUCCESS: 'success',
-  FAILURE: 'failure',
-  INFO: 'info',
-};
-
-const BASE_URL = 'https://pixabay.com/api/';
-const searchParams = new URLSearchParams({
-  key: '34105026-760e87e01f05ad85b03df7d04',
-  q: '',
-  image_type: 'photo',
-  orientation: 'horizontal',
-  safesearch: true,
-  per_page: 40,
-  page: 1,
-});
 
 const infiniteScrollObserver = new IntersectionObserver(([entry], observer) => {
   if (entry.isIntersecting) {
@@ -32,7 +17,6 @@ const infiniteScrollObserver = new IntersectionObserver(([entry], observer) => {
   }
 });
 
-let page = 0;
 let simpleLightbox = null;
 
 refs.form.addEventListener('submit', handleFormSubmit);
@@ -42,71 +26,76 @@ async function handleFormSubmit(e) {
 
   clearMarkup();
 
-  page = 1;
+  ImagesApi.pageReset();
 
-  searchParams.set('page', page);
+  ImagesApi.query = e.target.elements.searchQuery.value.trim();
 
-  const query = e.target.elements.searchQuery.value.trim();
-
-  if (query === '') {
+  if (ImagesApi.query === '') {
     refs.form.reset();
-    showNotification(
-      notificationType.INFO,
-      'Please, enter your search request.'
-    );
+
+    showNotification('info', 'Please, enter your search request.');
     return;
   }
 
-  searchParams.set('q', query);
+  try {
+    const {
+      hits: images,
+      totalHits: totalQuantity,
+      total: quantity,
+    } = await ImagesApi.getImages();
 
-  const response = await getImages();
+    if (quantity === 0) {
+      showNotification(
+        'failure',
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      return;
+    }
 
-  if (response.data.total === 0) {
+    showNotification('success', `Hooray! We found ${totalQuantity} images.`);
+
+    renderCards(images);
+
+    simpleLightbox = new SimpleLightbox('.gallery a');
+
+    addObserver();
+  } catch {
     showNotification(
-      notificationType.FAILURE,
-      'Sorry, there are no images matching your search query. Please try again.'
+      'failure',
+      'Something went wrong... Please try again later.'
     );
-    return;
   }
-
-  showNotification(
-    notificationType.SUCCESS,
-    `Hooray! We found ${response.data.totalHits} images.`
-  );
-
-  renderCards(response.data.hits);
-
-  addObserver();
-
-  simpleLightbox = new SimpleLightbox('.gallery a');
 }
 
 async function handleInfiniteScroll() {
-  page += 1;
+  ImagesApi.incrementPage();
 
-  searchParams.set('page', page);
+  try {
+    const { hits: images, totalHits: totalQuantity } =
+      await ImagesApi.getImages();
 
-  const response = await getImages();
+    renderCards(images);
 
-  renderCards(response.data.hits);
+    autoScrollPage();
 
-  autoScrollPage();
+    simpleLightbox.refresh();
 
-  simpleLightbox.refresh();
+    if (totalQuantity < ImagesApi.page * ImagesApi.perPage) {
+      showNotification(
+        'info',
+        "We're sorry, but you've reached the end of search results."
+      );
+      renderEndMessage();
+      return;
+    }
 
-  if (
-    response.data.totalHits <
-    searchParams.get('page') * searchParams.get('per_page')
-  ) {
+    addObserver();
+  } catch {
     showNotification(
-      notificationType.INFO,
-      "We're sorry, but you've reached the end of search results."
+      'failure',
+      'Something went wrong... Please try again later.'
     );
-    renderEndMessage();
-    return;
   }
-
-  addObserver();
 }
 
 function addObserver() {
@@ -116,16 +105,8 @@ function addObserver() {
   }
 }
 
-async function getImages() {
-  try {
-    return await axios.get(`${BASE_URL}?${searchParams}`);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function renderCards(images) {
-  images.map(
+function renderCards(data) {
+  data.map(
     ({
       webformatURL,
       largeImageURL,

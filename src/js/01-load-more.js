@@ -1,7 +1,9 @@
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import axios from 'axios';
+import { ImagesService } from './services/get-images-service';
+
+const ImagesApi = new ImagesService();
 
 const refs = {
   form: document.querySelector('#search-form'),
@@ -9,112 +11,92 @@ const refs = {
   loadMoreBtn: document.querySelector('.load-more'),
 };
 
-const notificationType = {
-  SUCCESS: 'success',
-  FAILURE: 'failure',
-  INFO: 'info',
-};
-
-const BASE_URL = 'https://pixabay.com/api/';
-const searchParams = new URLSearchParams({
-  key: '34105026-760e87e01f05ad85b03df7d04',
-  q: '',
-  image_type: 'photo',
-  orientation: 'horizontal',
-  safesearch: true,
-  per_page: 40,
-  page: 1,
-});
-
-let page = 0;
 let simpleLightbox = null;
 
-refs.loadMoreBtn.style.display = 'none';
 refs.form.addEventListener('submit', handleFormSubmit);
 refs.loadMoreBtn.addEventListener('click', handleLoadMoreBtnClick);
+
+isLoadMoreBtnShown(false);
 
 async function handleFormSubmit(e) {
   e.preventDefault();
 
-  refs.loadMoreBtn.style.display = 'none';
+  isLoadMoreBtnShown(false);
 
   clearMarkup();
 
-  page = 1;
+  ImagesApi.pageReset();
 
-  searchParams.set('page', page);
+  ImagesApi.query = e.target.elements.searchQuery.value.trim();
 
-  const query = e.target.elements.searchQuery.value.trim();
-
-  if (query === '') {
+  if (ImagesApi.query === '') {
     refs.form.reset();
-    showNotification(
-      notificationType.INFO,
-      'Please, enter your search request.'
-    );
+
+    showNotification('info', 'Please, enter your search request.');
     return;
   }
 
-  searchParams.set('q', query);
+  try {
+    const {
+      hits: images,
+      totalHits: totalQuantity,
+      total: quantity,
+    } = await ImagesApi.getImages();
 
-  const response = await getImages();
+    if (quantity === 0) {
+      showNotification(
+        'failure',
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      return;
+    }
 
-  if (response.data.total === 0) {
+    showNotification('success', `Hooray! We found ${totalQuantity} images.`);
+
+    renderCards(images);
+
+    simpleLightbox = new SimpleLightbox('.gallery a');
+
+    isLoadMoreBtnShown(true);
+  } catch {
     showNotification(
-      notificationType.FAILURE,
-      'Sorry, there are no images matching your search query. Please try again.'
+      'failure',
+      'Something went wrong... Please try again later.'
     );
-    return;
   }
-
-  showNotification(
-    notificationType.SUCCESS,
-    `Hooray! We found ${response.data.totalHits} images.`
-  );
-
-  renderCards(response.data.hits);
-
-  simpleLightbox = new SimpleLightbox('.gallery a');
-
-  refs.loadMoreBtn.style.display = 'block';
 }
 
 async function handleLoadMoreBtnClick() {
-  page += 1;
+  ImagesApi.incrementPage();
 
-  searchParams.set('page', page);
-
-  const response = await getImages();
-
-  renderCards(response.data.hits);
-
-  autoScrollPage();
-
-  simpleLightbox.refresh();
-
-  if (
-    response.data.totalHits <
-    searchParams.get('page') * searchParams.get('per_page')
-  ) {
-    refs.loadMoreBtn.style.display = 'none';
-    showNotification(
-      notificationType.INFO,
-      "We're sorry, but you've reached the end of search results."
-    );
-    renderEndMessage();
-  }
-}
-
-async function getImages() {
   try {
-    return await axios.get(`${BASE_URL}?${searchParams}`);
-  } catch (error) {
-    console.error(error);
+    const { hits: images, totalHits: totalQuantity } =
+      await ImagesApi.getImages();
+
+    renderCards(images);
+
+    autoScrollPage();
+
+    simpleLightbox.refresh();
+
+    if (totalQuantity < ImagesApi.page * ImagesApi.perPage) {
+      isLoadMoreBtnShown(false);
+      showNotification(
+        'info',
+        "We're sorry, but you've reached the end of search results."
+      );
+      renderEndMessage();
+    }
+  } catch {
+    showNotification(
+      'failure',
+      'Something went wrong... Please try again later.'
+    );
   }
 }
 
-function renderCards(images) {
-  images.map(
+function renderCards(data) {
+  data.map(
     ({
       webformatURL,
       largeImageURL,
@@ -165,6 +147,10 @@ function renderEndMessage() {
     </p>
     `
   );
+}
+
+function isLoadMoreBtnShown(boolean) {
+  refs.loadMoreBtn.style.display = boolean ? 'block' : 'none';
 }
 
 function clearMarkup() {
