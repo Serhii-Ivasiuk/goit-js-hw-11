@@ -164,7 +164,10 @@ function clearMarkup() {
 }
 
 function showNotification(type, message) {
-  return Notiflix.Notify[type](message);
+  return Notiflix.Notify[type](message, {
+    position: 'center-center',
+    clickToClose: true,
+  });
 }
 
 function autoScrollPage() {

@@ -57,6 +57,16 @@ async function handleFormSubmit(e) {
 
     simpleLightbox = new SimpleLightbox('.gallery a');
 
+    if (totalQuantity < ImagesApi.page * ImagesApi.perPage) {
+      isLoadMoreBtnShown(false);
+      showNotification(
+        'info',
+        "We're sorry, but you've reached the end of search results."
+      );
+      renderEndMessage();
+      return;
+    }
+
     isLoadMoreBtnShown(true);
   } catch {
     showNotification(
@@ -158,7 +168,10 @@ function clearMarkup() {
 }
 
 function showNotification(type, message) {
-  return Notiflix.Notify[type](message);
+  return Notiflix.Notify[type](message, {
+    position: 'center-center',
+    clickToClose: true,
+  });
 }
 
 function autoScrollPage() {
